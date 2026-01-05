@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36811.4 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sliding Simulation", "Sliding Simulation\Sliding Simulation.csproj", "{FAAC8F20-5BE2-45A9-AE18-71D7598FA15B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FAAC8F20-5BE2-45A9-AE18-71D7598FA15B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAAC8F20-5BE2-45A9-AE18-71D7598FA15B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAAC8F20-5BE2-45A9-AE18-71D7598FA15B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAAC8F20-5BE2-45A9-AE18-71D7598FA15B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {94CF9D7B-F6A2-4946-8DC4-561122C21E50}
+	EndGlobalSection
+EndGlobal
