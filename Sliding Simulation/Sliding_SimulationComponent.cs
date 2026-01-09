@@ -24,8 +24,8 @@ namespace Sliding_Simulation
         /// </summary>
         public Sliding_SimulationComponent()
           : base("Sliding_SimulationComponent", "滑行物理模拟 v61.2",
-              "基于物理碰撞的滑行模拟器 (完整注释版)",
-              "ZT Tools",
+              "基于物理碰撞的滑行模拟器",
+              "Dung Beetle",
               "Physics")
         {
         }
@@ -54,7 +54,7 @@ namespace Sliding_Simulation
                 "初始速度向量 (Vector)\n" +
                 "-----------------------\n" +
                 "定义粒子发射时的初速度方向和大小。\n" +
-                "• 向量长度 = 速度大小 (单位: 模型单位/秒)\n" +
+                "• 向量长度 = 速度大小 (单位: 米/秒)\n" +
                 "• 向量方向 = 发射方向\n" ,
                 GH_ParamAccess.list);
 
