@@ -1065,6 +1065,6 @@ namespace Sliding_Simulation
         }
 
         public override Guid ComponentGuid => new Guid("25874fdf-cd04-4f08-a7ba-513e884d8d73");
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.sliding_simulation_icon1;
+        protected override System.Drawing.Bitmap Icon => Dung_Beetle.Properties.Resources.sliding_simulation_icon1;
     }
 }
