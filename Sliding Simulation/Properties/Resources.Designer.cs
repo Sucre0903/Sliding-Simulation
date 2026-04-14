@@ -63,6 +63,16 @@ namespace Dung_Beetle.Properties {
         /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
+        internal static System.Drawing.Bitmap Crvtoarcs_icon1 {
+            get {
+                object obj = ResourceManager.GetObject("Crvtoarcs_icon1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
         internal static System.Drawing.Bitmap Dung_Beetle_icon2 {
             get {
                 object obj = ResourceManager.GetObject("Dung_Beetle_icon2", resourceCulture);

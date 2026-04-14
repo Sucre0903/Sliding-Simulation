@@ -30,34 +30,113 @@ namespace Sliding_Simulation
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Curve", "C", "需要拟合的原始曲线", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Tolerance", "Tol", "拟合公差 (最大允许偏差)", GH_ParamAccess.item, 0.01);
-            pManager.AddNumberParameter("Angle Tolerance", "Ang", "死弯角度阈值 (度)\n超过此角度的接缝会被视为死弯进行优化", GH_ParamAccess.item, 5.0);
-            pManager.AddNumberParameter("Max Length", "MaxL", "圆弧最大长度限制", GH_ParamAccess.item, 1000.0);
-            pManager.AddNumberParameter("Min Length", "MinL", "圆弧最小长度限制", GH_ParamAccess.item, 100.0);
-            pManager.AddIntegerParameter("Resolution", "Res", "拟合精度 (采样步数)\n默认 50-100", GH_ParamAccess.item, 50);
-            pManager.AddBooleanParameter("Seam Optimize", "Seam", "闭合曲线接缝优化\n尝试移动接缝位置以获得更好效果", GH_ParamAccess.item, true);
-            pManager.AddBooleanParameter("Dir Optimize", "Dir", "方向优化\n尝试反向拟合以寻找更优解", GH_ParamAccess.item, true);
-            pManager.AddBooleanParameter("Mid Optimize", "Mid", "中点强制优化\n提高圆弧贴合度", GH_ParamAccess.item, true);
-            pManager.AddBooleanParameter("Opt Shorts", "O_S", "优化短弧\n尝试合并过短的圆弧", GH_ParamAccess.item, true);
-            pManager.AddBooleanParameter("Opt Kinks", "O_K", "优化死弯 (核心功能)\n自动修复不光顺的折角", GH_ParamAccess.item, true);
-            pManager.AddIntegerParameter("Kink Iters", "Iter", "死弯优化迭代次数", GH_ParamAccess.item, 5);
+            pManager.AddCurveParameter("Curve", "C",
+                "需要拟合的原始曲线 (NURBS/Polyline)",
+                GH_ParamAccess.item);
+
+            pManager.AddNumberParameter("Tolerance", "Tol",
+                "拟合公差 (最大允许偏差)\n" +
+                "-----------------------\n" +
+                "定义圆弧与原曲线的最大偏离距离。\n" +
+                "• 注意：公差越小，逼近越准，但生成的圆弧碎段会显著增多。",
+                GH_ParamAccess.item, 0.01);
+
+            pManager.AddNumberParameter("Angle Tolerance", "Ang",
+                "死弯角度阈值 (度)\n" +
+                "-----------------------\n" +
+                "超过此折角的接缝会被视为“死弯”并触发优化机制。\n" +
+                "• 用于排查加工时（如拉弯、滚圆）无法平滑过渡的节点。",
+                GH_ParamAccess.item, 5.0);
+
+            pManager.AddNumberParameter("Max Length", "MaxL",
+                "圆弧最大长度限制\n" +
+                "-----------------------\n" +
+                "限制单段圆弧的最大弧长。\n" +
+                "💡 制造提示：通常需参考原材料（如钢管、型材）的采购定尺或运输极限。",
+                GH_ParamAccess.item, 1000.0);
+
+            pManager.AddNumberParameter("Min Length", "MinL",
+                "圆弧最小长度限制\n" +
+                "-----------------------\n" +
+                "防止生成无法加工的极端碎段。\n" +
+                "💡 制造提示：应大于数控设备的最小进给步长或最小操作余量。",
+                GH_ParamAccess.item, 100.0);
+
+            pManager.AddIntegerParameter("Resolution", "Res",
+                "拟合精度 (采样步数)\n" +
+                "-----------------------\n" +
+                "底层曲率采样密度，默认 50-100 足以应对大多数情况。",
+                GH_ParamAccess.item, 50);
+
+            pManager.AddBooleanParameter("Seam Optimize", "Seam",
+                "闭合曲线接缝优化\n" +
+                "尝试自动将接缝移动到曲率平缓处，以减少闭合环的加工畸变。",
+                GH_ParamAccess.item, true);
+
+            pManager.AddBooleanParameter("Dir Optimize", "Dir",
+                "方向优化\n" +
+                "尝试正反双向拟合比对，自动选择误差更小、段数更少的优解。",
+                GH_ParamAccess.item, true);
+
+            pManager.AddBooleanParameter("Mid Optimize", "Mid",
+                "中点强制优化\n提高圆弧中段对原曲线的贴合度。",
+                GH_ParamAccess.item, true);
+
+            pManager.AddBooleanParameter("Opt Shorts", "O_S",
+                "优化短弧\n" +
+                "尝试吞并或融合低于 [Min Length] 的加工废段。",
+                GH_ParamAccess.item, true);
+
+            pManager.AddBooleanParameter("Opt Kinks", "O_K",
+                "优化死弯 (核心功能)\n" +
+                "自动打散并重构不光顺的折角，确保整条曲线 G1 连续，降低后期打磨成本。",
+                GH_ParamAccess.item, false);
+
+            pManager.AddIntegerParameter("Kink Iters", "Iter",
+                "死弯优化迭代次数\n" +
+                "处理复杂连续死弯时的循环重构次数。",
+                GH_ParamAccess.item, 5);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddArcParameter("Arcs", "A", "拟合后的圆弧段", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Deviations", "Dev", "每段圆弧的最大偏差值", GH_ParamAccess.list);
+            pManager.AddArcParameter("Arcs", "A",
+                "优化后的圆弧段 (Arcs)\n可直接用于导出加工图纸。",
+                GH_ParamAccess.list);
+
+            pManager.AddNumberParameter("Deviations", "Dev",
+                "每段圆弧的最大偏差值\n用于最终质量精度复核。",
+                GH_ParamAccess.list);
+
             pManager.AddVectorParameter("Tangents", "Tan", "起始切线向量", GH_ParamAccess.list);
-            pManager.AddLineParameter("DevLines", "DL", "偏差可视化线段", GH_ParamAccess.list);
-            pManager.AddTextParameter("Log", "Msg", "运行日志与统计信息", GH_ParamAccess.item);
-            pManager.AddArcParameter("Shorts", "S_Arc", "残留的短弧 (需注意)", GH_ParamAccess.list);
+
+            pManager.AddLineParameter("DevLines", "DL",
+                "偏差可视化线段\n连接圆弧与原曲线误差最大处的指示线，便于肉眼检查。",
+                GH_ParamAccess.list);
+
+            pManager.AddTextParameter("Log", "Msg",
+                "诊断报告与统计信息\n包含分段统计、极值报告及报错信息。",
+                GH_ParamAccess.item);
+
+            pManager.AddArcParameter("Shorts", "S_Arc",
+                "残留的短弧 ⚠️\n未能被优化的极短弧，可能低于加工极限，需人工确认。",
+                GH_ParamAccess.list);
+
             pManager.AddPointParameter("Joints", "J_Pt", "所有分段接缝点", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Angles", "J_Ang", "接缝处折角 (度)", GH_ParamAccess.list);
-            pManager.AddPointParameter("Kinks", "K_Pt", "残留死弯位置", GH_ParamAccess.list);
+
+            pManager.AddNumberParameter("Angles", "J_Ang",
+                "接缝处折角 (度)\n用于评估相邻圆弧过渡的平滑性。",
+                GH_ParamAccess.list);
+
+            pManager.AddPointParameter("Kinks", "K_Pt",
+                "残留死弯位置 🔴\n未能修复的加工高风险点，可能需要回 Rhino 修改原线。",
+                GH_ParamAccess.list);
+
             pManager.AddNumberParameter("KinkAngles", "K_Ang", "残留死弯角度", GH_ParamAccess.list);
-            pManager.AddCurveParameter("Debug", "Dbg", "调试：死弯优化涉及的原始片段", GH_ParamAccess.list);
+
+            pManager.AddCurveParameter("Debug", "Dbg", "调试：被死弯优化系统切除重构的原始局部片段", GH_ParamAccess.list);
         }
+
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
@@ -724,6 +803,8 @@ namespace Sliding_Simulation
         private bool AngleInCCWRange(double start, double end, double ang) { if (end >= start) return ang >= start && ang <= end; return ang >= start || ang <= end; }
 
         public override Guid ComponentGuid => new Guid("63849502-1774-4861-8274-123456789000"); // 你的专属新GUID
-        protected override Bitmap Icon => null; // 有图标就替换这行
+
+        protected override System.Drawing.Bitmap Icon => Dung_Beetle.Properties.Resources.Crvtoarcs_icon1;
+
     }
 }
